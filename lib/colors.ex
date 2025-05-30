@@ -295,7 +295,7 @@ defmodule Tails.Colors do
     }
   }
 
-  @builtin_color_classes @builtin_colors |> Tails.ColorClasses.color_classes()
+  @builtin_color_classes @builtin_colors |> Tails.ColorClasses.color_classes("")
 
   def builtin_colors do
     @builtin_colors
@@ -308,6 +308,6 @@ defmodule Tails.Colors do
   def all_color_classes(colors) do
     @builtin_colors
     |> Map.merge(colors)
-    |> Tails.ColorClasses.color_classes()
+    |> Tails.ColorClasses.color_classes("")
   end
 end
