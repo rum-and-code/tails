@@ -14,28 +14,6 @@ defmodule Tails.Custom do
   use Tails.Custom, otp_app: :my_app, themes: @themes
   ```
 
-  ## Configuration Options
-
-  - `:colors_file` - Path to a JSON file containing custom color definitions
-  - `:color_classes` - List of custom color class names to merge
-  - `:no_merge_classes` - List of class names to never merge
-  - `:themes` - Map of theme definitions
-  - `:dark_themes` - Map of dark theme variants
-  - `:variants` - List of custom variant names
-  - `:fallback_to_colors` - Boolean to enable fallback color matching
-  - `:tailwind_prefix` - String prefix to add to all generated classes (e.g., "tw-")
-
-  Example configuration:
-
-  ```elixir
-  config :my_app, MyTails,
-    colors_file: "assets/colors.json",
-    tailwind_prefix: "tw-",
-    color_classes: ["primary", "secondary"],
-    no_merge_classes: ["custom-class"]
-  ```
-  """
-
   defmacro __using__(opts) do
     quote location: :keep,
           generated: true,
