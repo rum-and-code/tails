@@ -13,6 +13,7 @@ defmodule Tails.Custom do
   }
   use Tails.Custom, otp_app: :my_app, themes: @themes
   ```
+  """
 
   defmacro __using__(opts) do
     quote location: :keep,
