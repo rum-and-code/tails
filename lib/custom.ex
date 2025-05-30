@@ -1445,7 +1445,9 @@ defmodule Tails.Custom do
                   [
                     " "
                     | Enum.intersperse(
-                        Enum.map(tailwind.classes, &add_prefix_to_iodata([variant, ":", &1])),
+                        Enum.map(tailwind.classes, fn class ->
+                          [variant, ":", class]
+                        end),
                         " "
                       )
                   ]
@@ -1470,7 +1472,7 @@ defmodule Tails.Custom do
 
       defp simple(nil, _), do: ""
       defp simple(value, nil), do: [" " | add_prefix_to_iodata([value])]
-      defp simple(value, variant), do: [" " | add_prefix_to_iodata([variant, ":", value])]
+      defp simple(value, variant), do: [" ", variant, ":" | add_prefix_to_iodata([value])]
 
       defp add_prefix_to_iodata(iodata) do
         case @tailwind_prefix do
@@ -1488,10 +1490,10 @@ defmodule Tails.Custom do
       defp prefix(prefix, value, nil, _), do: [" " | add_prefix_to_iodata([prefix, "-", value])]
 
       defp prefix(prefix, empty, variant, true) when empty in ["", nil],
-        do: [" " | add_prefix_to_iodata([variant, ":", prefix])]
+        do: [" ", variant, ":" | add_prefix_to_iodata([prefix])]
 
       defp prefix(prefix, value, variant, _),
-        do: [" " | add_prefix_to_iodata([variant, ":", prefix, "-", value])]
+        do: [" ", variant, ":" | add_prefix_to_iodata([prefix, "-", value])]
 
       defp directional(nil, _key, _, _), do: ""
 
@@ -1544,10 +1546,7 @@ defmodule Tails.Custom do
 
       defp direction("-" <> value, suffix, prefix, variant, dash_suffix?),
         do: [
-          " "
-          | add_prefix_to_iodata([
-              variant,
-              ":-",
+          " ", variant, ":-" | add_prefix_to_iodata([
               prefix,
               dash_suffix(suffix, dash_suffix?),
               "-",
@@ -1557,10 +1556,7 @@ defmodule Tails.Custom do
 
       defp direction(value, suffix, prefix, variant, dash_suffix?),
         do: [
-          " "
-          | add_prefix_to_iodata([
-              variant,
-              ":",
+          " ", variant, ":" | add_prefix_to_iodata([
               prefix,
               dash_suffix(suffix, dash_suffix?),
               "-",
