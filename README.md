@@ -50,6 +50,30 @@ See the module docs for `Tails` to see what we currently handle
 
 Set `config :tails, :no_merge_classes, [:foo, :bar]` to avoid merging a specific set of classes. Can be useful as an escape hatch if tails is doing the wrong thing.
 
+#### Custom Tailwind Prefix
+
+If you're using Tailwind CSS with a custom prefix (e.g., when integrating with existing CSS frameworks like Bootstrap), you can configure Tails to handle a custom prefix like so:
+
+```elixir
+# in config.exs
+config :tails, tailwind_prefix: "tw-"
+```
+
+or if using a custom tails module:
+
+```elixir
+config :my_app, MyTails, tailwind_prefix: "tw-"
+```
+
+With this configuration:
+
+```elixir
+Tails.classes(["tw-text-blue-900 tw-text-lg m-2", "p-4 tw-text-gray-700"])
+# "tw-text-lg tw-text-gray-700 tw-p-4 tw-m2"
+```
+
+This is particularly useful when you need to avoid CSS conflicts with existing stylesheets.
+
 ## Colors
 
 We use custom defined colors for two things:

@@ -34,6 +34,7 @@ defmodule Tails.Custom do
         @themes themes || Application.compile_env(otp_app, :themes)
         @custom_variants Application.compile_env(otp_app, :variants) || []
         @fallback_to_colors Application.compile_env(otp_app, :fallback_to_colors) || false
+        @tailwind_prefix Application.compile_env(otp_app, :tailwind_prefix) || ""
       else
         @colors_file Application.compile_env(otp_app, __MODULE__)[:colors_file]
         @color_classes Application.compile_env(otp_app, __MODULE__)[:color_classes] || []
@@ -43,6 +44,7 @@ defmodule Tails.Custom do
         @custom_variants Application.compile_env(otp_app, __MODULE__)[:variants] || []
         @fallback_to_colors Application.compile_env(otp_app, __MODULE__)[:fallback_to_colors] ||
                               false
+        @tailwind_prefix Application.compile_env(otp_app, __MODULE__)[:tailwind_prefix] || ""
       end
 
       @colors (if @colors_file do
@@ -415,6 +417,20 @@ defmodule Tails.Custom do
 
       @browser_color_prefixes ~w[# rgb( rgba( hsl( hsla(]
 
+      defp strip_prefix(class) when is_binary(class) do
+        case @tailwind_prefix do
+          "" ->
+            class
+
+          prefix ->
+            if String.starts_with?(class, prefix) do
+              String.slice(class, String.length(prefix)..-1//1)
+            else
+              class
+            end
+        end
+      end
+
       @moduledoc """
       Tailwind class utilities like class merging.
 
@@ -697,7 +713,7 @@ defmodule Tails.Custom do
       def merge(tailwind, classes) when is_binary(classes) do
         classes
         |> String.split()
-        |> Enum.reduce(tailwind, &merge_class(&2, &1))
+        |> Enum.reduce(tailwind, &merge_class(&2, strip_prefix(&1)))
       end
 
       def merge(tailwind, %__MODULE__{} = classes) do
@@ -1426,9 +1442,28 @@ defmodule Tails.Custom do
                 []
               else
                 if variant do
-                  [" " | Enum.intersperse(Enum.map(tailwind.classes, &[variant, ":", &1]), " ")]
+                  [
+                    " "
+                    | Enum.intersperse(
+                        Enum.map(tailwind.classes, fn class ->
+                          [variant, ":", class]
+                        end),
+                        " "
+                      )
+                  ]
                 else
-                  [" " | Enum.intersperse(tailwind.classes, " ")]
+                  [
+                    " "
+                    | Enum.intersperse(
+                        Enum.map(tailwind.classes, fn class ->
+                          case @tailwind_prefix do
+                            "" -> class
+                            prefix -> prefix <> class
+                          end
+                        end),
+                        " "
+                      )
+                  ]
                 end
               end
           end
@@ -1436,18 +1471,29 @@ defmodule Tails.Custom do
       end
 
       defp simple(nil, _), do: ""
-      defp simple(value, nil), do: [" ", value]
-      defp simple(value, variant), do: [" ", variant, ":", value]
+      defp simple(value, nil), do: [" " | add_prefix_to_iodata([value])]
+      defp simple(value, variant), do: [" ", variant, ":" | add_prefix_to_iodata([value])]
+
+      defp add_prefix_to_iodata(iodata) do
+        case @tailwind_prefix do
+          "" -> iodata
+          prefix -> [prefix | iodata]
+        end
+      end
 
       defp prefix(prefix, value, variant, naked? \\ false)
       defp prefix(_prefix, nil, _, _), do: ""
-      defp prefix(prefix, empty, nil, true) when empty in ["", nil], do: [" ", prefix]
-      defp prefix(prefix, value, nil, _), do: [" ", prefix, "-", value]
+
+      defp prefix(prefix, empty, nil, true) when empty in ["", nil],
+        do: [" " | add_prefix_to_iodata([prefix])]
+
+      defp prefix(prefix, value, nil, _), do: [" " | add_prefix_to_iodata([prefix, "-", value])]
 
       defp prefix(prefix, empty, variant, true) when empty in ["", nil],
-        do: [" ", variant, ":", prefix]
+        do: [" ", variant, ":" | add_prefix_to_iodata([prefix])]
 
-      defp prefix(prefix, value, variant, _), do: [" ", variant, ":", prefix, "-", value]
+      defp prefix(prefix, value, variant, _),
+        do: [" ", variant, ":" | add_prefix_to_iodata([prefix, "-", value])]
 
       defp directional(nil, _key, _, _), do: ""
 
@@ -1488,19 +1534,35 @@ defmodule Tails.Custom do
       defp direction(nil, _, _, _, _), do: ""
 
       defp direction("", suffix, prefix, nil, dash_suffix?),
-        do: [" ", prefix, dash_suffix(suffix, dash_suffix?)]
+        do: [" " | add_prefix_to_iodata([prefix, dash_suffix(suffix, dash_suffix?)])]
 
       defp direction("-" <> value, suffix, prefix, nil, dash_suffix?),
-        do: [" -", prefix, dash_suffix(suffix, dash_suffix?), "-", value]
+        do: [
+          " " | add_prefix_to_iodata(["-", prefix, dash_suffix(suffix, dash_suffix?), "-", value])
+        ]
 
       defp direction(value, suffix, prefix, nil, dash_suffix?),
-        do: [" ", prefix, dash_suffix(suffix, dash_suffix?), "-", value]
+        do: [" " | add_prefix_to_iodata([prefix, dash_suffix(suffix, dash_suffix?), "-", value])]
 
       defp direction("-" <> value, suffix, prefix, variant, dash_suffix?),
-        do: [" ", variant, ":-", prefix, dash_suffix(suffix, dash_suffix?), "-", value]
+        do: [
+          " ", variant, ":-" | add_prefix_to_iodata([
+              prefix,
+              dash_suffix(suffix, dash_suffix?),
+              "-",
+              value
+            ])
+        ]
 
       defp direction(value, suffix, prefix, variant, dash_suffix?),
-        do: [" ", variant, ":", prefix, dash_suffix(suffix, dash_suffix?), "-", value]
+        do: [
+          " ", variant, ":" | add_prefix_to_iodata([
+              prefix,
+              dash_suffix(suffix, dash_suffix?),
+              "-",
+              value
+            ])
+        ]
 
       defp dash_suffix(value, true) when not is_nil(value), do: ["-", value]
       defp dash_suffix(nil, _), do: ""
